@@ -1,0 +1,37 @@
+name: Auto Update Airdrops
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-airdrops:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests google-generativeai
+
+      - name: Run AI airdrop updater
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python scripts/update_airdrops.py
+
+      - name: Commit and push if changed
+        run: |
+          git config --global user.email "bot@cryptodrops.io"
+          git config --global user.name "AirdropBot"
+          git add data/airdrops.json
+          git diff --staged --quiet || git commit -m "Auto-update airdrops"
+          git push
